@@ -197,7 +197,8 @@ Test done.
 
 버전 4 실습: PS에서 DMA를 통해 대량의 데이터 연산 (HLS와 연계 예정)
 
-📂 결과물 정리 (Git 구조 예시)
+### 📂 결과물 정리 (Git 구조 예시)
+```
 ZyboAI/
 └── week02_axi_slave/
     ├── vivado_project/
@@ -207,8 +208,16 @@ ZyboAI/
     │   ├── src/main.c
     │   └── system/platform/
     └── README.md
+```
 
+### ✅ 다음 주차(3주차):
+   * Vivado HLS를 이용한 Conv2D / Sobel 필터 가속기 설계로 확장합니다.
+   * HLS IP를 AXI Stream + DMA 방식으로 연결하고, PS에서 가속기 제어를 실습합니다.
 
-✅ 다음 주차(3주차):
-Vivado HLS를 이용한 Conv2D / Sobel 필터 가속기 설계로 확장합니다.
-HLS IP를 AXI Stream + DMA 방식으로 연결하고, PS에서 가속기 제어를 실습합니다.
+### 사용 안내 (요약)
+   1. Vivado 열고 create_alu_project.tcl을 소스하세요.
+      * Vivado Tcl 콘솔 →  source /full/path/to/create_alu_project.tcl
+      * 프로젝트/BD 생성, PS7 설정, proc_sys_reset, (IP repo에 있을 경우) my_axi_alu 자동 연결, 비트스트림 생성, XSA까지 자동 진행됩니다.
+      * my_axi_alu IP가 아직 패키지되지 않았다면, 스크립트가 그 상태로 넘어가며 안내 메시지를 출력합니다. (나중에 ip_repo에 IP 추가 후 다시 배선/주소 할당 부분만 재실행하면 됩니다.)
+   2. Vitis에서 방금 생성된 XSA를 Platform으로 사용한 뒤, main.c를 앱에 넣고 빌드 → Program Device 하면 됩니다.
+      * 베이스 주소는 자동 생성된 xparameters.h의 XPAR_MY_AXI_ALU_0_S00_AXI_BASEADDR를 사용합니다(스크립트에도 안전장치 포함).
