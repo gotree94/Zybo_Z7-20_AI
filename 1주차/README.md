@@ -65,7 +65,7 @@
    * Digilent가 제공하는 Zybo Z7-20 master XDC에서 LED 핀 라인만 활성화해서 사용하면 가장 안전합니다.
    * 블록 디자인에서 만든 외부 포트 이름이 gpio_io_o[3:0] 라면, XDC에서 다음처럼 net 이름을 맞춰주세요. (예시는 형식만 보여주는 것이고, 실제 핀명은 Digilent XDC에서 Zybo Z7-20용 LED 핀으로 정확히 사용하세요.)
 
-```
+```xdc
 ## User LEDs (Zybo Z7-20 Master XDC에서 해당 라인 활성화)
 set_property PACKAGE_PIN <LED0_PIN> [get_ports {gpio_io_o[0]}]
 set_property IOSTANDARD LVCMOS33   [get_ports {gpio_io_o[0]}]
@@ -100,7 +100,7 @@ set_property IOSTANDARD LVCMOS33   [get_ports {gpio_io_o[3]}]
    2. BSP에 xgpio 드라이버 포함 확인
    3. src/main.c 에 다음과 같이 작성:
 
-```
+```c
 #include "xgpio.h"
 #include "xparameters.h"
 #include "xil_printf.h"
