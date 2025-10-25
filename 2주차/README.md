@@ -221,3 +221,55 @@ ZyboAI/
       * my_axi_alu IP가 아직 패키지되지 않았다면, 스크립트가 그 상태로 넘어가며 안내 메시지를 출력합니다. (나중에 ip_repo에 IP 추가 후 다시 배선/주소 할당 부분만 재실행하면 됩니다.)
    2. Vitis에서 방금 생성된 XSA를 Platform으로 사용한 뒤, main.c를 앱에 넣고 빌드 → Program Device 하면 됩니다.
       * 베이스 주소는 자동 생성된 xparameters.h의 XPAR_MY_AXI_ALU_0_S00_AXI_BASEADDR를 사용합니다(스크립트에도 안전장치 포함).
+      * 
+
+### my_axi_alu AXI4-Lite IP 템플릿(래퍼 + 사용자 로직 + 패키징 Tcl)
+
+   * my_axi_alu_ip_template.zip
+   * ZIP 내부 구조
+```
+ip_repo/
+└── my_axi_alu/
+    ├── hdl/
+    │   ├── my_axi_alu_v1_0.v              # 최상위 래퍼 (AXI-Slave 포함 인스턴스)
+    │   ├── my_axi_alu_v1_0_S00_AXI.v      # AXI4-Lite 슬레이브 + 레지스터/ALU
+    │   └── my_axi_alu_user_logic.v        # (선택) 로직 분리용 헬퍼 모듈
+    └── package_my_axi_alu.tcl             # Vivado IP Packager 자동 스크립트
+```
+
+   * 주소맵 (32-bit 정렬)
+```
+0x00 : REG_A (W, [7:0])
+0x04 : REG_B (W, [7:0])
+0x08 : REG_OPCODE (W, [2:0]) — 0:add, 1:sub, 2:and, 3:or, 4:xor
+0x0C : REG_RESULT (R, [15:0])
+```
+
+   * 외부 포트
+      * leds_o[3:0] : 결과 하위 4비트(원하면 BD에서 LED 핀에 연결)
+
+### 사용 방법
+   * 1) IP 패키징 : Vivado Tcl 콘솔에서 아래처럼 실행:
+```tcl
+cd <절대경로>/ip_repo/my_axi_alu
+source package_my_axi_alu.tcl
+```
+   * 성공하면 component.xml이 생성되고, 메시지에 안내가 나옵니다.
+   * Vivado 프로젝트에서 Settings → IP → Repository에 ip_repo 상위 폴더를 추가하면,
+   * Add IP 목록에서 my_axi_alu를 사용할 수 있습니다. (VLNV: user.org:user:my_axi_alu:1.0)
+
+   * 2) 블록 디자인 연결(요약)
+my_axi_alu 추가 → S_AXI를 PS의 M_AXI_GP0에 연결
+
+s_axi_aclk ← PS FCLK_CLK0, s_axi_aresetn ← proc_sys_reset/peripheral_aresetn
+
+Address Editor에서 자동 주소 할당 (예: 0x43C0_0000)
+
+3) 애플리케이션 (Vitis)
+
+앞서 드린 week02용 main.c 예제를 그대로 사용하면 됩니다.
+
+베이스주소: XPAR_MY_AXI_ALU_0_S00_AXI_BASEADDR
+
+Xil_Out32/Base+0x0/0x4/0x8에 A/B/OPCODE 쓰고, Base+0xC에서 결과 읽기
+      
