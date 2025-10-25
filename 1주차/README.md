@@ -31,12 +31,16 @@
    2. Power 스위치 ON → 보드 전원 LED 점등 확인
    3. Device Manager(Windows)에서 “Xilinx USB Cable” 또는 JTAG 장치 인식 확인
 
+---
+
 ### 1. Vivado 프로젝트 & 보드 파일 적용 (10분)
    1. Vivado 실행 → Create Project
    2. Name/Location 지정 → RTL Project (Sources/Constraints는 비워둬도 됨)
    3. Boards 탭에서 Zybo Z7-20 선택
       * 만약 목록에 없으면: Digilent의 Zybo Z7 보드 파일을 설치(보드 파일 없이도 진행 가능하지만, 있으면 Pin/Interface 매핑이 쉬움)
    4. 프로젝트 생성 완료
+
+---
 
 ### 2. 블록 디자인: Zynq PS + AXI GPIO + Reset (20분)
    1. Create Block Design → 이름 design_1
@@ -55,12 +59,13 @@
    7. AXI GPIO의 GPIO 포트를 External로 내보내기 (그림자 포트 gpio_io_o[3:0] 생성됨 → 나중에 LED 핀으로 제약)
    * 팁: Address Editor에서 AXI GPIO가 0x4000_0000 같은 베이스 주소를 자동 할당 받습니다. (Vitis에서 드라이버가 이걸 사용)
 
-3. 제약(XDC)으로 LED 핀 매핑 (10분)
+---
 
-Digilent가 제공하는 Zybo Z7-20 master XDC에서 LED 핀 라인만 활성화해서 사용하면 가장 안전합니다.
+### 3. 제약(XDC)으로 LED 핀 매핑 (10분)
+   * Digilent가 제공하는 Zybo Z7-20 master XDC에서 LED 핀 라인만 활성화해서 사용하면 가장 안전합니다.
+   * 블록 디자인에서 만든 외부 포트 이름이 gpio_io_o[3:0] 라면, XDC에서 다음처럼 net 이름을 맞춰주세요. (예시는 형식만 보여주는 것이고, 실제 핀명은 Digilent XDC에서 Zybo Z7-20용 LED 핀으로 정확히 사용하세요.)
 
-블록 디자인에서 만든 외부 포트 이름이 gpio_io_o[3:0] 라면, XDC에서 다음처럼 net 이름을 맞춰주세요. (예시는 형식만 보여주는 것이고, 실제 핀명은 Digilent XDC에서 Zybo Z7-20용 LED 핀으로 정확히 사용하세요.)
-
+```
 ## User LEDs (Zybo Z7-20 Master XDC에서 해당 라인 활성화)
 set_property PACKAGE_PIN <LED0_PIN> [get_ports {gpio_io_o[0]}]
 set_property IOSTANDARD LVCMOS33   [get_ports {gpio_io_o[0]}]
@@ -73,36 +78,29 @@ set_property IOSTANDARD LVCMOS33   [get_ports {gpio_io_o[2]}]
 
 set_property PACKAGE_PIN <LED3_PIN> [get_ports {gpio_io_o[3]}]
 set_property IOSTANDARD LVCMOS33   [get_ports {gpio_io_o[3]}]
+```
+   * m중요: 실제 핀 이름은 보드의 Master XDC에서 “LED”로 표시된 줄을 사용하세요. (보드 파일이 있으면 Board 탭에서 LED 인터페이스로 매핑도 가능)
 
+---
 
-중요: 실제 핀 이름은 보드의 Master XDC에서 “LED”로 표시된 줄을 사용하세요. (보드 파일이 있으면 Board 탭에서 LED 인터페이스로 매핑도 가능)
+### 4. Synthesis/Implementation/Bitstream & XSA 내보내기 (10~20분)
+   1. Validate Design → 경고/에러 없으면 OK
+   1. Generate HDL Wrapper (Let Vivado manage it)
+   1. Run Synthesis → Implementation → Generate Bitstream
+   1. 완료 후 File → Export → Export Hardware…
+      * Include bitstream 체크
+      * 내보낸 XSA 파일 경로 확인 (다음 단계 Vitis에서 사용)
 
-4. Synthesis/Implementation/Bitstream & XSA 내보내기 (10~20분)
+---
 
-Validate Design → 경고/에러 없으면 OK
+### 5. Vitis(Bare-metal)에서 LED 토글 앱 (20분)
+   1. Vitis 실행 → Create Application Project
+      * Platform: 방금 Export한 XSA 선택 (또는 Import)
+      * Application: Empty Application (또는 Hello World)
+   2. BSP에 xgpio 드라이버 포함 확인
+   3. src/main.c 에 다음과 같이 작성:
 
-Generate HDL Wrapper (Let Vivado manage it)
-
-Run Synthesis → Implementation → Generate Bitstream
-
-완료 후 File → Export → Export Hardware…
-
-Include bitstream 체크
-
-내보낸 XSA 파일 경로 확인 (다음 단계 Vitis에서 사용)
-
-5. Vitis(Bare-metal)에서 LED 토글 앱 (20분)
-
-Vitis 실행 → Create Application Project
-
-Platform: 방금 Export한 XSA 선택 (또는 Import)
-
-Application: Empty Application (또는 Hello World)
-
-BSP에 xgpio 드라이버 포함 확인
-
-src/main.c 에 다음과 같이 작성:
-
+```
 #include "xgpio.h"
 #include "xparameters.h"
 #include "xil_printf.h"
@@ -133,25 +131,18 @@ int main() {
     }
     return 0;
 }
+```
+   4. 빌드 → Program Device (Vitis에서 자동으로 Bitstream+ELF 다운로드)
+   5. Vitis Console(JTAG UART)에 Zybo Z7-20 LED blink start 출력 확인, 보드의 LED가 좌→우로 순차 점멸되면 성공
 
+### 6. 검증 체크리스트
+   * 보드 전원/케이블/부트 점퍼(JTAG) OK
+   * Vivado Block Design: PS7 + AXI GPIO + AXI Interconnect + Proc Sys Reset 연결 완료
+   * AXI GPIO의 gpio_io_o[3:0]를 External로 내보내고, LED 핀 제약(XDC) 적용
+   * Bitstream 생성 & XSA 내보내기(Include bitstream)
+   * Vitis에서 xgpio로 LED 토글 성공, 콘솔 메시지 확인
 
-빌드 → Program Device (Vitis에서 자동으로 Bitstream+ELF 다운로드)
-
-Vitis Console(JTAG UART)에 Zybo Z7-20 LED blink start 출력 확인, 보드의 LED가 좌→우로 순차 점멸되면 성공
-
-6. 검증 체크리스트
-
- 보드 전원/케이블/부트 점퍼(JTAG) OK
-
- Vivado Block Design: PS7 + AXI GPIO + AXI Interconnect + Proc Sys Reset 연결 완료
-
- AXI GPIO의 gpio_io_o[3:0]를 External로 내보내고, LED 핀 제약(XDC) 적용
-
- Bitstream 생성 & XSA 내보내기(Include bitstream)
-
- Vitis에서 xgpio로 LED 토글 성공, 콘솔 메시지 확인
-
-7. 흔한 이슈 & 해결
+### 7. 흔한 이슈 & 해결
 
 [NSTD-1 / UCIO-1] I/O Standard/LOC 미지정 에러
 ↳ Master XDC에서 LED 핀 라인 활성화 했는지 확인 (IOSTANDARD = LVCMOS33, LOC = 각 LED의 패키지핀)
