@@ -135,6 +135,8 @@ int main() {
    4. 빌드 → Program Device (Vitis에서 자동으로 Bitstream+ELF 다운로드)
    5. Vitis Console(JTAG UART)에 Zybo Z7-20 LED blink start 출력 확인, 보드의 LED가 좌→우로 순차 점멸되면 성공
 
+---
+
 ### 6. 검증 체크리스트
    * 보드 전원/케이블/부트 점퍼(JTAG) OK
    * Vivado Block Design: PS7 + AXI GPIO + AXI Interconnect + Proc Sys Reset 연결 완료
@@ -142,31 +144,29 @@ int main() {
    * Bitstream 생성 & XSA 내보내기(Include bitstream)
    * Vitis에서 xgpio로 LED 토글 성공, 콘솔 메시지 확인
 
+---
+
 ### 7. 흔한 이슈 & 해결
 
-[NSTD-1 / UCIO-1] I/O Standard/LOC 미지정 에러
-↳ Master XDC에서 LED 핀 라인 활성화 했는지 확인 (IOSTANDARD = LVCMOS33, LOC = 각 LED의 패키지핀)
+   * [NSTD-1 / UCIO-1] I/O Standard/LOC 미지정 에러
+      ↳ Master XDC에서 LED 핀 라인 활성화 했는지 확인 (IOSTANDARD = LVCMOS33, LOC = 각 LED의 패키지핀)
+   * GPIO가 안 깜빡임
+      ↳ (1) XGpio_SetDataDirection(..., 0x0)로 출력 설정했는지
+      ↳ (2) 채널 번호(보통 1)와 비트폭(4비트) 일치 확인
+      ↳ (3) Address Editor에서 AXI 주소 할당 및 XPAR_GPIO_0_DEVICE_ID 매칭 확인
+   * 콘솔 출력이 안 보임
+      ↳ Vitis 콘솔이 JTAG UART에 연결됐는지 확인(또는 UART 포트 선택)
 
-GPIO가 안 깜빡임
-↳ (1) XGpio_SetDataDirection(..., 0x0)로 출력 설정했는지
-↳ (2) 채널 번호(보통 1)와 비트폭(4비트) 일치 확인
-↳ (3) Address Editor에서 AXI 주소 할당 및 XPAR_GPIO_0_DEVICE_ID 매칭 확인
+---
 
-콘솔 출력이 안 보임
-↳ Vitis 콘솔이 JTAG UART에 연결됐는지 확인(또는 UART 포트 선택)
+### 8. 1주차 산출물(당신이 보드에서 직접 만들 것)
+   * Vivado 프로젝트(design_1) + Bitstream
+   * XSA (Include bitstream)
+   * Vitis 워크스페이스(Platform + App)
+   * main.c(LED 토글) 실행 로그 스크린샷/메모
 
-8. 1주차 산출물(당신이 보드에서 직접 만들 것)
+---
 
-Vivado 프로젝트(design_1) + Bitstream
-
-XSA (Include bitstream)
-
-Vitis 워크스페이스(Platform + App)
-
-main.c(LED 토글) 실행 로그 스크린샷/메모
-
-9. 다음 주(2주차) 예고
-
-Verilog IP 모듈(FSM/ALU/UART) 추가하고, AXI4-Lite 슬레이브 템플릿으로 PS에서 레지스터 접근
-
-간단한 Sim/xsim 파형 검증과 함께, 보드 LED/스위치/버튼 매핑 실습
+### 9. 다음 주(2주차) 예고
+   * Verilog IP 모듈(FSM/ALU/UART) 추가하고, AXI4-Lite 슬레이브 템플릿으로 PS에서 레지스터 접근
+   * 간단한 Sim/xsim 파형 검증과 함께, 보드 LED/스위치/버튼 매핑 실습
